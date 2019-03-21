@@ -1,0 +1,5 @@
+= Safecastbeat Docs
+
+Welcome to the Safecastbeat documentation.
+
+

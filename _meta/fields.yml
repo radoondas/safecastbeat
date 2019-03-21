@@ -1,0 +1,57 @@
+- key: safecastbeat
+  title: safecastbeat
+  description:
+  fields:
+    - name: type
+      type: keyword
+      description: Type of the document
+    - name: safecast
+      type: group
+      description: >
+        Safecast data
+      fields:
+        - name: safecastId
+          type: integer
+          description: Original Safecast ID
+        - name: userId
+          type: integer
+          description: User ID
+        - name: value
+          type: float
+          description: Value
+        - name: unit
+          type: keyword
+          description: Unit
+        - name: locationName
+          type: keyword
+          description: Location Name
+        - name: deviceId
+          type: integer
+          description: Device ID
+        - name: originalId
+          type: integer
+          description: Original ID
+        - name: measurementImportId
+          type: integer
+          description: Measurement import ID
+        - name: capturedAt
+          type: date
+          description: Captured at
+        - name: height
+          type: integer
+          description: Height
+        - name: devicetypeId
+          type: keyword
+          description: Devicetype ID
+        - name: sensorId
+          type: integer
+          description: Sensor ID
+        - name: stationId
+          type: integer
+          description: Station ID
+        - name: channelId
+          type: integer
+          description: Channel ID
+        - name: location
+          type: geo_point
+          description: Location

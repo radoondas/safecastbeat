@@ -1,0 +1,12 @@
+################### Safecastbeat Configuration Example #########################
+
+############################# Safecastbeat ######################################
+
+safecastbeat:
+  # Defines how often an event is sent to the output and also
+  # calculates the period of data pull from safecast
+  period: 5m
+
+  # Defines SSL configuration.
+  ssl:
+    cafile: "/Users/rado/workspace/go/src/github.com/radoondas/safecastbeat/CALetsencrypt.pem"
