@@ -2,116 +2,43 @@
 
 Welcome to Safecastbeat.
 
-Ensure that this folder is at the following location:
-`${GOPATH}/src/github.com/radoondas/safecastbeat`
+Safecastbeat is a beat which will periodically pull data from [Safecast](https://safecast.org/) [API](https://api.safecast.org/en-US/home). 
 
-## Getting Started with Safecastbeat
-
-### Requirements
-
-* [Golang](https://golang.org/dl/) 1.10
-
-### Init Project
-To get running with Safecastbeat and also install the
-dependencies, run the following command:
+This will specifically pull data every `Period` defined and will use api call with `since` parameter.
+Example call may look following:
 
 ```
-make setup
+https://api.safecast.org/measurements.json?per_page=1000&since=2019-03-22%2B20%3A51%3A46
 ```
 
-It will create a clean git history for each major step. Note that you can always rewrite the history if you wish before pushing your changes.
+Above command will request any new data added to Safecast DB since date and time specified in URI. It can be mix of current and older data as measurements can be uploaded with delays.
 
-To push Safecastbeat in the git repository, run the following commands:
+## Installation
+Download and install appropriate package for your system. Check release [page](https://github.com/radoondas/safecast/releases) for latest packages.
 
-```
-git remote set-url origin https://github.com/radoondas/safecastbeat
-git push origin master
-```
+You also can use Docker image `docker pull radoondas/safecastbeat`
 
-For further development, check out the [beat developer guide](https://www.elastic.co/guide/en/beats/libbeat/current/new-beat.html).
 
-### Build
+## Configuration
 
-To build the binary for Safecastbeat run the command below. This will generate a binary
-in the same directory with the name safecastbeat.
+To run Safecastbeat you have to define `Period` for data pull. 1m or 2m should be sufficient.
 
-```
-make
+```yaml
+  period: 5m
 ```
 
+Define the path to CA file which requires TLS call. One CA is provided in the repository. Feel free to use it.
 
-### Run
-
-To run Safecastbeat with debugging output enabled, run:
-
-```
-./safecastbeat -c safecastbeat.yml -e -d "*"
-```
-
-
-### Test
-
-To test Safecastbeat, run the following command:
+## Run
 
 ```
-make testsuite
+./safecastbeat -c safecastbeat.yml -e 
 ```
 
-alternatively:
-```
-make unit-tests
-make system-tests
-make integration-tests
-make coverage-report
-```
+## Visualisations
+This is an example of visualisation for measurements.
 
-The test coverage is reported in the folder `./build/coverage/`
+![Map](docs/img/map_01.png)
 
-### Update
-
-Each beat has a template for the mapping in elasticsearch and a documentation for the fields
-which is automatically generated based on `fields.yml` by running the following command.
-
-```
-make update
-```
-
-
-### Cleanup
-
-To clean  Safecastbeat source code, run the following commands:
-
-```
-make fmt
-make simplify
-```
-
-To clean up the build directory and generated artifacts, run:
-
-```
-make clean
-```
-
-
-### Clone
-
-To clone Safecastbeat from the git repository, run the following commands:
-
-```
-mkdir -p ${GOPATH}/src/github.com/radoondas/safecastbeat
-git clone https://github.com/radoondas/safecastbeat ${GOPATH}/src/github.com/radoondas/safecastbeat
-```
-
-
-For further development, check out the [beat developer guide](https://www.elastic.co/guide/en/beats/libbeat/current/new-beat.html).
-
-
-## Packaging
-
-The beat frameworks provides tools to crosscompile and package your beat for different platforms. This requires [docker](https://www.docker.com/) and vendoring as described above. To build packages of your beat, run the following command:
-
-```
-make release
-```
-
-This will fetch and create all images required for the build process. The whole process to finish can take several minutes.
+## Build
+If you want to build Owmbeat from scratch, follow [build](BUILD.md) documentation.

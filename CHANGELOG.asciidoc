@@ -1,0 +1,38 @@
+// Use these for links to issue and pulls. Note issues and pulls redirect one to
+// each other on Github, so don't worry too much on using the right prefix.
+:issue: https://github.com/radoondas/safecastbeat/issues/
+:pull: https://github.com/radoondas/safecastbeat/pull/
+
+////////////////////////////////////////////////////////////
+// Template, add newest changes here
+
+=== Beats version HEAD
+https://github.com/radoondas/safecastbeat/compare/6.6.1...6.6[Check the HEAD diff]
+
+==== Breaking changes
+
+==== Bugfixes
+
+==== Added
+
+==== Deprecated
+
+==== Known Issue
+
+////////////////////////////////////////////////////////////
+
+[[release-notes-6.6.2]]
+=== Safecastbeat version 6.6.2
+https://github.com/radoondas/safecastbeat/compare/v6.6.1...6.6.2[View commits]
+
+==== Breaking changes
+
+None
+
+==== Bugfixes
+
+Initial release
+
+[[release-notes-6.6.0]]
+=== Safecastbeat version 6.6.1
+This is initial release of Safecastbeat
