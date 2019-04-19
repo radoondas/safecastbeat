@@ -14,7 +14,7 @@ Ensure that this folder is at the following location:
 
 ### Clone
 
-To clone Owmbeat from the git repository, run the following commands:
+To clone Safecastbeat from the git repository, run the following commands:
 
 ```
 mkdir -p ${GOPATH}/src/github.com/<github-user>/safecastbeat
