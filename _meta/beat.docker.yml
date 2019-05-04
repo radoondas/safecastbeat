@@ -1,5 +1,5 @@
 safecastbeat:
-  period: 5m
+  period: 10m
 
   ssl:
     cafile: "/Users/rado/workspace/go/src/github.com/radoondas/safecastbeat/CALetsencrypt.pem"

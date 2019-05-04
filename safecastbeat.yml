@@ -5,7 +5,7 @@
 safecastbeat:
   # Defines how often an event is sent to the output and also
   # calculates the period of data pull from safecast
-  period: 5m
+  period: 10m
 
   # Defines SSL configuration.
   ssl:
