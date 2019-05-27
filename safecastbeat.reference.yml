@@ -9,7 +9,7 @@ safecastbeat:
 
   # Defines SSL configuration.
   ssl:
-    cafile: "/Users/rado/workspace/go/src/github.com/radoondas/safecastbeat/CALetsencrypt.pem"
+    cafile: "/path/to/CA.pem"
 
 #================================ General ======================================
 
