@@ -6,7 +6,7 @@ services:
 language: go
 
 go:
-  - $(cat .go-version)
+  - 1.12.4
 
 os:
   - linux
