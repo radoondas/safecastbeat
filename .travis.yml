@@ -35,7 +35,7 @@ before_install:
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/radoondas/safecastbeat/
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/radoondas/safecastbeat/
   - cd $HOME/gopath/src/github.com/radoondas/safecastbeat/
-  - - if [ $TRAVIS_OS_NAME = osx ]; then pip install virtualenv; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then pip install virtualenv; fi
 
 
 install:
