@@ -85,19 +85,6 @@ make clean
 ```
 
 
-### Clone
-
-To clone Safecastbeat from the git repository, run the following commands:
-
-```
-mkdir -p ${GOPATH}/src/github.com/radoondas/safecastbeat
-git clone https://github.com/radoondas/safecastbeat ${GOPATH}/src/github.com/radoondas/safecastbeat
-```
-
-
-For further development, check out the [beat developer guide](https://www.elastic.co/guide/en/beats/libbeat/current/new-beat.html).
-
-
 ## Packaging
 
 The beat frameworks provides tools to crosscompile and package your beat for different platforms. This requires [docker](https://www.docker.com/) and vendoring as described above. To build packages of your beat, run the following command:
@@ -107,3 +94,6 @@ mage package
 ```
 
 This will fetch and create all images required for the build process. The whole process to finish can take several minutes.
+
+For further development, check out the [beat developer guide](https://www.elastic.co/guide/en/beats/libbeat/current/new-beat.html).
+
