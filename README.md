@@ -43,4 +43,4 @@ This is an example of visualisation for measurements.
 ![Map](docs/img/map_01.png)
 
 ## Build
-If you want to build Owmbeat from scratch, follow [build](BUILD.md) documentation.
+If you want to build Safecastbeat from scratch, follow [build](BUILD.md) documentation.
