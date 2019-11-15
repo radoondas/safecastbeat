@@ -192,7 +192,7 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 	if res.StatusCode != 200 {
 		logp.NewLogger(selector).Debug("Status code: ", res.StatusCode)
 		logp.NewLogger(selector).Debug("Status code: ", res.Body)
-		return fmt.Errorf("HTTP %s", res), sfr
+		return fmt.Errorf("HTTP %+v", res), sfr
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
