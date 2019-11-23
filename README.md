@@ -1,4 +1,4 @@
-[![Travis Build Status](https://travis-ci.org/radoondas/safecastbeat.svg?branch=master)](https://travis-ci.org/radoondas/safecastbeat)
+[![Travis Build Status](https://travis-ci.org/radoondas/safecastbeat.svg?branch=6.8)](https://travis-ci.org/radoondas/safecastbeat)
 
 # Safecastbeat
 
