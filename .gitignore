@@ -5,3 +5,4 @@
 /safecastbeat
 /safecastbeat.test
 *.pyc
+/.claude/

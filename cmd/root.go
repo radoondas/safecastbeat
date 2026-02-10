@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/radoondas/safecastbeat/beater"
 
-	"github.com/elastic/beats/libbeat/cmd"
-	"github.com/elastic/beats/libbeat/cmd/instance"
+	"github.com/elastic/beats/v7/libbeat/cmd"
+	"github.com/elastic/beats/v7/libbeat/cmd/instance"
 )
 
 // Name of this beat

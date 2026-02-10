@@ -5,15 +5,17 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
-	"github.com/elastic/beats/libbeat/beat"
-	"github.com/elastic/beats/libbeat/common"
-	"github.com/elastic/beats/libbeat/logp"
+	"github.com/elastic/beats/v7/libbeat/beat"
+	cfglib "github.com/elastic/elastic-agent-libs/config"
+	"github.com/elastic/elastic-agent-libs/logp"
+	"github.com/elastic/elastic-agent-libs/mapstr"
 
 	"github.com/radoondas/safecastbeat/config"
 )
@@ -56,7 +58,7 @@ const (
 var lastRunAdded, lastRunCaptured, lastRunPoint time.Time
 
 // New creates an instance of safecastbeat.
-func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
+func New(b *beat.Beat, cfg *cfglib.C) (beat.Beater, error) {
 	c := config.DefaultConfig
 	if err := cfg.Unpack(&c); err != nil {
 		return nil, fmt.Errorf("Error reading config file: %v", err)
@@ -151,7 +153,7 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 
 	if CAFile != "" {
 		// Load our trusted certificate path
-		pemData, err := ioutil.ReadFile(CAFile)
+		pemData, err := os.ReadFile(CAFile)
 		if err != nil {
 			panic(err)
 		}
@@ -195,7 +197,7 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 		return fmt.Errorf("HTTP %+v", res), sfr
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	logp.NewLogger(selector).Debug(body)
 	if err != nil {
 		log.Fatal(err)
@@ -220,7 +222,7 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 
 			event := beat.Event{
 				Timestamp: ts,
-				Fields: common.MapStr{
+				Fields: mapstr.M{
 					"type":     "safecastbeat",
 					"safecast": d,
 				},
@@ -239,14 +241,14 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 	return nil, sfr
 }
 
-func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []common.MapStr {
+func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []mapstr.M {
 
-	safecastData := []common.MapStr{}
+	safecastData := []mapstr.M{}
 
 	for _, d := range data {
 		//logp.NewLogger(selector).Debug("Device data: ", device)
 
-		sf := common.MapStr{
+		sf := mapstr.M{
 			"safecastId":          d.Id,
 			"userId":              d.User_id,
 			"value":               d.Value,
@@ -261,7 +263,7 @@ func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []comm
 			"sensorId":            d.Sensor_id,
 			"stationId":           d.Station_id,
 			"channelId":           d.Channel_id,
-			"location": common.MapStr{
+			"location": mapstr.M{
 				"lat": d.Latitude,
 				"lon": d.Longitude,
 			},
