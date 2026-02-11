@@ -1,12 +1,12 @@
 package beater
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,9 +22,11 @@ import (
 
 // Safecastbeat configuration.
 type Safecastbeat struct {
-	done   chan struct{}
-	config config.Config
-	client beat.Client
+	done       chan struct{}
+	config     config.Config
+	client     beat.Client
+	httpClient *http.Client
+	logger     *logp.Logger
 }
 
 type SafecastResponseData struct {
@@ -55,31 +57,59 @@ const (
 	perPage        = "1000"
 )
 
-var lastRunAdded, lastRunCaptured, lastRunPoint time.Time
-
 // New creates an instance of safecastbeat.
 func New(b *beat.Beat, cfg *cfglib.C) (beat.Beater, error) {
 	c := config.DefaultConfig
 	if err := cfg.Unpack(&c); err != nil {
-		return nil, fmt.Errorf("Error reading config file: %v", err)
+		return nil, fmt.Errorf("reading config file: %w", err)
+	}
+
+	httpClient, err := buildHTTPClient(c.SSL.CAfile)
+	if err != nil {
+		return nil, fmt.Errorf("building HTTP client: %w", err)
+	}
+
+	logger := logp.NewLogger(selector)
+
+	if c.SSL.CAfile == "" {
+		logger.Info("CAFile IS NOT set.")
 	}
 
 	bt := &Safecastbeat{
-		done:   make(chan struct{}),
-		config: c,
-	}
-
-	err := bt.init(b)
-	if err != nil {
-		return nil, err
+		done:       make(chan struct{}),
+		config:     c,
+		httpClient: httpClient,
+		logger:     logger,
 	}
 
 	return bt, nil
 }
 
+// buildHTTPClient creates a reusable HTTP client with optional CA certificate.
+func buildHTTPClient(caFile string) (*http.Client, error) {
+	tlsConfig := &tls.Config{}
+
+	if caFile != "" {
+		pemData, err := os.ReadFile(caFile)
+		if err != nil {
+			return nil, fmt.Errorf("reading CA file %s: %w", caFile, err)
+		}
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(pemData) {
+			return nil, fmt.Errorf("parsing PEM data from %s", caFile)
+		}
+		tlsConfig.RootCAs = pool
+	}
+
+	return &http.Client{
+		Transport: &http.Transport{TLSClientConfig: tlsConfig},
+		Timeout:   30 * time.Second,
+	}, nil
+}
+
 // Run starts safecastbeat.
 func (bt *Safecastbeat) Run(b *beat.Beat) error {
-	logp.NewLogger(selector).Info("safecastbeat is running! Hit CTRL-C to stop it.")
+	bt.logger.Info("safecastbeat is running! Hit CTRL-C to stop it.")
 
 	var err error
 	bt.client, err = b.Publisher.Connect()
@@ -87,7 +117,7 @@ func (bt *Safecastbeat) Run(b *beat.Beat) error {
 		return err
 	}
 
-	logp.NewLogger(selector).Info("Configuration: ", bt.config)
+	bt.logger.Infof("Configuration: %+v", bt.config)
 
 	go func() {
 		ticker := time.NewTicker(bt.config.Period)
@@ -96,11 +126,11 @@ func (bt *Safecastbeat) Run(b *beat.Beat) error {
 		// UTC is required
 		lastTime := time.Now().UTC().Add(-bt.config.Period)
 
+	loop:
 		for {
-
-			err, sfr := bt.GetSafecast(b, lastTime, bt.config.SSL.CAfile)
+			err, sfr := bt.GetSafecast(b, lastTime)
 			if err != nil {
-				logp.NewLogger(selector).Error("Error while getting Safecast data: %v", err)
+				bt.logger.Errorf("Error while getting Safecast data: %v", err)
 			} else {
 				if sfr.success {
 					lastTime = sfr.tm
@@ -109,11 +139,10 @@ func (bt *Safecastbeat) Run(b *beat.Beat) error {
 
 			select {
 			case <-bt.done:
-				goto GotoFinish
+				break loop
 			case <-ticker.C:
 			}
 		}
-	GotoFinish:
 	}()
 
 	<-bt.done
@@ -123,18 +152,10 @@ func (bt *Safecastbeat) Run(b *beat.Beat) error {
 
 // Stop stops safecastbeat.
 func (bt *Safecastbeat) Stop() {
-	bt.client.Close()
-	close(bt.done)
-}
-
-func (bt *Safecastbeat) init(b *beat.Beat) error {
-
-	// Configuration checks
-	if bt.config.SSL.CAfile == "" {
-		logp.NewLogger(selector).Info("CAFile IS NOT set.")
+	if err := bt.client.Close(); err != nil {
+		bt.logger.Warnf("Error closing client: %v", err)
 	}
-
-	return nil
+	close(bt.done)
 }
 
 type SFResponse struct {
@@ -142,84 +163,71 @@ type SFResponse struct {
 	success bool
 }
 
-func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile string) (error, SFResponse) {
-
+func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time) (error, SFResponse) {
 	now := time.Now().UTC()
 	sfr := SFResponse{tm: now, success: false}
 
-	tlsConfig := &tls.Config{RootCAs: x509.NewCertPool()}
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
-	var ParsedUrl *url.URL
-
-	if CAFile != "" {
-		// Load our trusted certificate path
-		pemData, err := os.ReadFile(CAFile)
-		if err != nil {
-			panic(err)
-		}
-		ok := tlsConfig.RootCAs.AppendCertsFromPEM(pemData)
-		if !ok {
-			logp.NewLogger(selector).Error("Unable to load CA file")
-			panic("Couldn't load PEM data")
-		}
-	}
-
-	client := &http.Client{Transport: transport}
-
-	ParsedUrl, err := url.Parse(safecastUrl)
+	parsedURL, err := url.Parse(safecastUrl)
 	if err != nil {
-		logp.NewLogger(selector).Error("Unable to parse URL string")
-		panic(err)
+		return fmt.Errorf("parsing URL: %w", err), sfr
 	}
 
-	ParsedUrl.Path += safecastPath
+	parsedURL.Path += safecastPath
 	parameters := url.Values{}
-
 	parameters.Add("per_page", perPage)
 	parameters.Add("since", lastRun.Format(dateTimeFormat))
-	logp.NewLogger(selector).Debug("Last run at: ", lastRun.String())
+	parsedURL.RawQuery = parameters.Encode()
 
-	ParsedUrl.RawQuery = parameters.Encode()
-	logp.NewLogger(selector).Debug("Requesting Safecast data: ", ParsedUrl.String())
+	bt.logger.Debugf("Last run at: %s", lastRun.String())
+	bt.logger.Debugf("Requesting Safecast data: %s", parsedURL.String())
 
-	req, err := http.NewRequest("GET", ParsedUrl.String(), nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-bt.done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	defer cancel()
 
-	res, err := client.Do(req)
-
+	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
-		return err, sfr
+		return fmt.Errorf("creating request: %w", err), sfr
+	}
+
+	res, err := bt.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("executing request: %w", err), sfr
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		logp.NewLogger(selector).Debug("Status code: ", res.StatusCode)
-		logp.NewLogger(selector).Debug("Status code: ", res.Body)
-		return fmt.Errorf("HTTP %+v", res), sfr
+		bt.logger.Debugf("Unexpected status code: %d", res.StatusCode)
+		return fmt.Errorf("HTTP %d from %s", res.StatusCode, parsedURL.String()), sfr
 	}
 
 	body, err := io.ReadAll(res.Body)
-	logp.NewLogger(selector).Debug(body)
 	if err != nil {
-		log.Fatal(err)
-		return err, sfr
+		bt.logger.Errorf("Failed to read response body: %v", err)
+		return fmt.Errorf("reading response body: %w", err), sfr
 	}
+	bt.logger.Debugf("Response body size: %d bytes", len(body))
 
 	sfdata := []SafecastResponseData{}
-	err = json.Unmarshal([]byte(body), &sfdata)
+	err = json.Unmarshal(body, &sfdata)
 	if err != nil {
-		fmt.Printf("error: %v", err)
-		return err, sfr
+		bt.logger.Errorf("Failed to unmarshal JSON: %v", err)
+		return fmt.Errorf("unmarshalling JSON: %w", err), sfr
 	}
 
 	if len(sfdata) > 0 {
-		logp.NewLogger(selector).Debug(len(sfdata), " new documents.")
-		//logp.NewLogger(selector).Debug("Unmarshal-ed Safecast data: ", sfdata)
+		bt.logger.Debugf("%d new documents.", len(sfdata))
 
 		transformedData := bt.TransformStationData(sfdata)
 
 		ts := time.Now()
 		for _, d := range transformedData {
-
 			event := beat.Event{
 				Timestamp: ts,
 				Fields: mapstr.M{
@@ -227,27 +235,21 @@ func (bt *Safecastbeat) GetSafecast(b *beat.Beat, lastRun time.Time, CAFile stri
 					"safecast": d,
 				},
 			}
-
 			bt.client.Publish(event)
-			logp.NewLogger(selector).Debug("Event: ", event)
 		}
 		sfr.success = true
-
 	} else {
 		sfr.success = true
-		logp.NewLogger(selector).Debug("No new data.")
+		bt.logger.Debug("No new data.")
 	}
 
 	return nil, sfr
 }
 
 func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []mapstr.M {
-
 	safecastData := []mapstr.M{}
 
 	for _, d := range data {
-		//logp.NewLogger(selector).Debug("Device data: ", device)
-
 		sf := mapstr.M{
 			"safecastId":          d.Id,
 			"userId":              d.User_id,
@@ -257,7 +259,7 @@ func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []maps
 			"deviceId":            d.Device_id,
 			"originalId":          d.Original_id,
 			"measurementImportId": d.Measurement_import_id,
-			"capturedAt":          d.Captured_at, //date
+			"capturedAt":          d.Captured_at,
 			"height":              d.Height,
 			"devicetypeId":        d.Devicetype_id,
 			"sensorId":            d.Sensor_id,
@@ -268,7 +270,6 @@ func (bt *Safecastbeat) TransformStationData(data []SafecastResponseData) []maps
 				"lon": d.Longitude,
 			},
 		}
-		logp.NewLogger(selector).Debug("SF data: ", sf)
 
 		safecastData = append(safecastData, sf)
 	}

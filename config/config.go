@@ -14,7 +14,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	Period: 10 * time.Second,
+	Period: 10 * time.Minute,
 	SSL: SSL{
 		CAfile: "",
 	},
