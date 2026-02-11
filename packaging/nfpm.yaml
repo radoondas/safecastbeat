@@ -1,0 +1,27 @@
+name: safecastbeat
+arch: "${ARCH}"
+version: "${VERSION}"
+maintainer: "radoondas"
+description: "Elastic Beat for Safecast radiation measurement data"
+vendor: "radoondas"
+homepage: "https://github.com/radoondas/safecastbeat"
+license: "ASL 2.0"
+contents:
+  - src: ../dist/safecastbeat-${VERSION}-linux-${GOARCH}/safecastbeat
+    dst: /usr/share/safecastbeat/bin/safecastbeat
+    file_info:
+      mode: 0755
+  - src: ../safecastbeat.yml
+    dst: /etc/safecastbeat/safecastbeat.yml
+    type: config|noreplace
+  - src: ../safecastbeat.reference.yml
+    dst: /etc/safecastbeat/safecastbeat.reference.yml
+  - src: ../CA.pem
+    dst: /etc/safecastbeat/CA.pem
+  - src: ../fields.yml
+    dst: /usr/share/safecastbeat/fields.yml
+  - src: ../packaging/safecastbeat.service
+    dst: /lib/systemd/system/safecastbeat.service
+scripts:
+  postinstall: ../packaging/postinst.sh
+  preremove: ../packaging/prerm.sh

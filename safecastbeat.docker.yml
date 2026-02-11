@@ -2,7 +2,7 @@ safecastbeat:
   period: 10m
 
   ssl:
-    cafile: "/Users/rado/workspace/go/src/github.com/radoondas/safecastbeat/CALetsencrypt.pem"
+    cafile: "/etc/safecastbeat/CA.pem"
 processors:
 - add_cloud_metadata: ~
 - add_docker_metadata: ~

@@ -52,13 +52,6 @@ To test Safecastbeat, run the following command:
 go test ./...
 ```
 
-alternatively:
-```
-make testsuite
-make unit-tests
-```
-
-The test coverage is reported in the folder `./build/coverage/`
 
 ### Update
 
@@ -85,14 +78,57 @@ make clean
 ```
 
 
+## Cross-Compilation
+
+Build binaries for all supported platforms (linux, darwin, windows; amd64, arm64):
+
+```
+./scripts/build.sh
+```
+
+Binaries are output to `dist/`.
+
+
 ## Packaging
 
-The beat frameworks provides tools to crosscompile and package your beat for different platforms. This requires [docker](https://www.docker.com/). To build packages of your beat, run the following command:
+Create distributable archives (tar.gz, zip, sha512 checksums):
 
 ```
-mage package
+./scripts/package.sh
 ```
 
-This will fetch and create all images required for the build process. The whole process to finish can take several minutes.
+To also create deb/rpm packages, install [nfpm](https://nfpm.goreleaser.com/) first:
 
-For further development, check out the [beat developer guide](https://www.elastic.co/guide/en/beats/libbeat/current/new-beat.html).
+```
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.1
+./scripts/package.sh
+```
+
+Verify all expected artifacts:
+
+```
+./scripts/verify-assets.sh
+```
+
+
+## Docker
+
+Build a local Docker image:
+
+```
+docker buildx build --platform linux/amd64 -t safecastbeat:local .
+```
+
+
+## Release
+
+Releases are automated via GitHub Actions. Push a tag to trigger:
+
+```
+git tag v9.3.0
+git push origin v9.3.0
+```
+
+This builds all platforms, packages archives and deb/rpm, builds and pushes a multi-arch Docker image, and creates a GitHub Release with all artifacts.
+
+Manual dry-run (without publishing) is available via `workflow_dispatch` in the Actions tab.

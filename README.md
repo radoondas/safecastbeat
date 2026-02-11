@@ -1,10 +1,8 @@
-[![Travis Build Status](https://travis-ci.org/radoondas/safecastbeat.svg?branch=master)](https://travis-ci.org/radoondas/safecastbeat)
-
 # Safecastbeat
 
 Welcome to Safecastbeat.
 
-Safecastbeat is a beat which will periodically pull data from [Safecast](https://safecast.org/) [API](https://api.safecast.org/en-US/home). 
+Safecastbeat is a beat which will periodically pull data from [Safecast](https://safecast.org/) [API](https://api.safecast.org/en-US/home).
 
 This will specifically pull data every `Period` defined and will use api call with `since` parameter.
 Example call may look following:
@@ -16,10 +14,12 @@ https://api.safecast.org/measurements.json?per_page=1000&since=2019-03-22%2B20%3
 Above command will request any new data added to Safecast DB since date and time specified in URI. It can be mix of current and older data as measurements can be uploaded with delays.
 
 ## Installation
-Download and install appropriate package for your system. Check release [page](https://github.com/radoondas/safecast/releases) for latest packages.
 
-You also can use Docker image `docker pull radoondas/safecastbeat`
+Download and install appropriate package for your system. Check the [releases](https://github.com/radoondas/safecastbeat/releases) page for latest packages.
 
+Available platforms: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64). Packages available as tar.gz, zip, deb, and rpm.
+
+You can also use the Docker image: `docker pull radoondas/safecastbeat`
 
 ## Configuration
 
@@ -34,13 +34,15 @@ Define the path to CA file which requires TLS call. One CA is provided in the re
 ## Run
 
 ```
-./safecastbeat -c safecastbeat.yml -e 
+./safecastbeat -c safecastbeat.yml -e
 ```
 
 ## Visualisations
+
 This is an example of visualisation for measurements.
 
 ![Map](docs/img/map_01.png)
 
 ## Build
+
 If you want to build Safecastbeat from scratch, follow [build](BUILD.md) documentation.

@@ -1,0 +1,11 @@
+.git
+.idea
+.claude
+dist
+build
+tests
+notes
+*.test
+*.pyc
+.DS_Store
+PLAN-*.md

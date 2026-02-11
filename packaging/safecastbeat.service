@@ -1,0 +1,16 @@
+[Unit]
+Description=Safecastbeat - Safecast radiation measurement data shipper
+Documentation=https://github.com/radoondas/safecastbeat
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=safecastbeat
+Group=safecastbeat
+ExecStart=/usr/share/safecastbeat/bin/safecastbeat -c /etc/safecastbeat/safecastbeat.yml -e
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
